@@ -1,11 +1,13 @@
-﻿import { useState } from 'react'; // Importar useState
+﻿import { useState } from 'react';
 import { Navbar, Nav, Container } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 
 function Menu() {
     const location = useLocation();
-    const [expanded, setExpanded] = useState(false); // Estado para controlar o menu no mobile
+    const [expanded, setExpanded] = useState(false);
+
+    const isLoginPage = location.pathname === "/login";
 
     const linkStyle = {
         color: "#888",
@@ -26,8 +28,8 @@ function Menu() {
         <Navbar
             expand="lg"
             sticky="top"
-            expanded={expanded} // Vincula o estado ao Navbar
-            onToggle={(nextExpanded) => setExpanded(nextExpanded)} // Atualiza o estado ao clicar no botão hambúrguer
+            expanded={expanded}
+            onToggle={(nextExpanded) => setExpanded(nextExpanded)}
             style={{
                 backgroundColor: "rgba(255, 255, 255, 0.95)",
                 backdropFilter: "blur(10px)",
@@ -36,14 +38,18 @@ function Menu() {
                 paddingBottom: "15px"
             }}
         >
-            <Container>
-                {/* LOGO */}
+            <Container className={isLoginPage ? "justify-content-center" : ""}>
+                {/* LOGO E TÍTULO */}
                 <Navbar.Brand
                     as={Link}
                     to="/"
-                    onClick={() => setExpanded(false)} // Fecha ao clicar na logo
-                    className="d-flex align-items-center gap-2"
-                    style={{ textDecoration: 'none' }}
+                    onClick={() => setExpanded(false)}
+                    className={`d-flex align-items-center gap-2 ${isLoginPage ? "mx-0" : ""}`}
+                    style={{
+                        textDecoration: 'none',
+                        // Se for login, garante que o Brand não tenha margens laterais automáticas do Bootstrap
+                        flex: isLoginPage ? "none" : ""
+                    }}
                 >
                     <img
                         src={logo}
@@ -55,54 +61,47 @@ function Menu() {
                             fontFamily: "'Playfair Display', serif",
                             fontSize: "1.2rem",
                             letterSpacing: "0.5px",
-
-                            fontWeight: "700"
+                            fontWeight: "700",
+                            color: "#1a1a1a"
                         }}
                     >
                         Wedding Control
                     </span>
                 </Navbar.Brand>
 
-                {/* BOTÃO MOBILE */}
-                <Navbar.Toggle aria-controls="menu" className="border-0 shadow-none" />
-
-                <Navbar.Collapse id="menu">
-                    <Nav className="ms-auto mt-3 mt-lg-0" style={{ gap: "25px" }}>
-                        {[
-                            { nome: "Início", path: "/" },
-                            { nome: "Dashboard", path: "/dashboard" },
-                            { nome: "Pagamentos", path: "/pagamentos" },
-                            { nome: "Categorias", path: "/categorias" },
-                            { nome: "Fornecedores", path: "/fornecedores" },
-                            { nome: "Convidados", path: "/convidados" }
-                        ].map((item) => (
-                            <Nav.Link
-                                as={Link}
-                                key={item.path}
-                                to={item.path}
-                                // O segredo está aqui: fechar o menu ao clicar
-                                onClick={() => setExpanded(false)}
-                                style={location.pathname === item.path ? activeLinkStyle : linkStyle}
-                                className="nav-link-custom"
-                                onMouseEnter={(e) => (e.target.style.color = "#c2a36b")}
-                                onMouseLeave={(e) => {
-                                    if (location.pathname !== item.path) {
-                                        e.target.style.color = "#888";
-                                    }
-                                }}
-                            >
-                                {item.nome}
-                            </Nav.Link>
-                        ))}
-                    </Nav>
-                </Navbar.Collapse>
+                {/* SÓ MOSTRA LINKS E BOTÃO SE NÃO FOR LOGIN */}
+                {!isLoginPage && (
+                    <>
+                        <Navbar.Toggle aria-controls="menu" className="border-0 shadow-none" />
+                        <Navbar.Collapse id="menu">
+                            <Nav className="ms-auto mt-3 mt-lg-0" style={{ gap: "25px" }}>
+                                {[
+                                    { nome: "Início", path: "/" },
+                                    { nome: "Dashboard", path: "/dashboard" },
+                                    { nome: "Pagamentos", path: "/pagamentos" },
+                                    { nome: "Categorias", path: "/categorias" },
+                                    { nome: "Fornecedores", path: "/fornecedores" },
+                                    { nome: "Convidados", path: "/convidados" }
+                                ].map((item) => (
+                                    <Nav.Link
+                                        as={Link}
+                                        key={item.path}
+                                        to={item.path}
+                                        onClick={() => setExpanded(false)}
+                                        style={location.pathname === item.path ? activeLinkStyle : linkStyle}
+                                        className="nav-link-custom"
+                                    >
+                                        {item.nome}
+                                    </Nav.Link>
+                                ))}
+                            </Nav>
+                        </Navbar.Collapse>
+                    </>
+                )}
             </Container>
 
             <style>{`
-                .nav-link-custom {
-                    position: relative;
-                }
-                
+                .nav-link-custom { position: relative; }
                 @media (min-width: 992px) {
                     .nav-link-custom::after {
                         content: '';
@@ -114,15 +113,9 @@ function Menu() {
                         background-color: #c2a36b;
                         transition: width 0.3s ease;
                     }
-                    .nav-link-custom:hover::after {
-                        width: 100%;
-                    }
+                    .nav-link-custom:hover::after { width: 100%; }
                 }
-
-                .navbar-toggler:focus {
-                    box-shadow: none;
-                    outline: none;
-                }
+                .navbar-toggler:focus { box-shadow: none; outline: none; }
             `}</style>
         </Navbar>
     );

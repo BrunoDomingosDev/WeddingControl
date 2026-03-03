@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using WeddingControl.Api.Data;
 using WeddingControl.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeddingControl.Api.Controllers;
 
+[Authorize] // <--- A tag de segurança para proteger a lista de convidados!
 [ApiController]
 [Route("api/[controller]")]
 public class ConvidadosController : ControllerBase
@@ -27,7 +29,7 @@ public class ConvidadosController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Convidados>> GetById(int id)
     {
-        var convidados= await _context.Convidados.FindAsync(id);
+        var convidados = await _context.Convidados.FindAsync(id);
 
         if (convidados == null)
             return NotFound();

@@ -1,6 +1,7 @@
-﻿import { BrowserRouter, Routes, Route } from "react-router-dom";
+﻿import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
 import Home from "./pages/Home";
+import Login from "./pages/Login"; // IMPORTAR O LOGIN
 import Categorias from "./pages/Categorias";
 import Fornecedores from "./pages/Fornecedores/index";
 import './styles/theme.css';
@@ -9,29 +10,33 @@ import Pagamentos from "./components/Pagamentos";
 import Convidados from "./components/Convidados";
 import Footer from "./components/Footer";
 
+// --- COMPONENTE DE PROTEÇÃO DE ROTA ---
+// Se não tiver token, joga o usuário de volta para o Login
+const RotaPrivada = ({ children }) => {
+    const isAuthenticated = localStorage.getItem('auth_token') !== null;
+    return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
 function App() {
     return (
         <BrowserRouter>
-            {/* Usamos uma div com display flex e min-height 100vh 
-              para o footer nunca ficar flutuando no meio da tela
-            */}
-            <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                minHeight: '100vh',
-                backgroundColor: '#fbfaf8' // Fundo padrão leve do seu sistema
-            }}>
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#fbfaf8' }}>
                 <Menu />
-                
-                {/* O main com flex: 1 empurra o footer para baixo */}
+
                 <main style={{ flex: 1 }}>
                     <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/categorias" element={<Categorias />} />
-                        <Route path="/fornecedores" element={<Fornecedores />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/pagamentos" element={<Pagamentos />} />
-                        <Route path="/convidados" element={<Convidados />} />
+                        {/* ROTAS PÚBLICAS */}
+
+                        <Route path="/login" element={<Login />} />
+                        {/* <Route path="/rsvp" element={<RSVP />} /> -> Faremos na sequência */}
+
+                        {/* ROTAS PRIVADAS (Envolvidas pelo componente RotaPrivada) */}
+                        <Route path="/" element={<RotaPrivada><Home /></RotaPrivada>} />                             
+                        <Route path="/dashboard" element={<RotaPrivada><Dashboard /></RotaPrivada>} />
+                        <Route path="/categorias" element={<RotaPrivada><Categorias /></RotaPrivada>} />
+                        <Route path="/fornecedores" element={<RotaPrivada><Fornecedores /></RotaPrivada>} />
+                        <Route path="/pagamentos" element={<RotaPrivada><Pagamentos /></RotaPrivada>} />
+                        <Route path="/convidados" element={<RotaPrivada><Convidados /></RotaPrivada>} />
                     </Routes>
                 </main>
 

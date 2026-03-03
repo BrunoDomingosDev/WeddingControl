@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import {
     Table, Button, Modal, Form, Container, Row, Col, Tabs, Tab, Spinner
 } from 'react-bootstrap';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, Paperclip, Send } from 'lucide-react';
 import api from '../services/api';
 
 /* ===================== HELPERS ===================== */
@@ -22,12 +22,16 @@ const Fornecedores = () => {
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState('dados');
 
+    // Estados para o novo pagamento e controles de e-mail/arquivo
+    const [enviarEmail, setEnviarEmail] = useState(false);
+    const [arquivo, setArquivo] = useState(null);
+    const [novoPagamento, setNovoPagamento] = useState({ descricao: '', valor: '', dataVencimento: '' });
+
     const [formData, setFormData] = useState({
         id: 0, categoriaId: 0, nome: '', tipoPessoa: 'PJ', email: '', telefone: '', cnpjCpf: '', dataFechamento: '', valorTotal: 0, valorEntrada: 0, fechado: false, observacao: ''
     });
 
     const [pagamentosModal, setPagamentosModal] = useState([]);
-    const [novoPagamento, setNovoPagamento] = useState({ descricao: '', valor: '', dataVencimento: '' });
 
     useEffect(() => { loadData(); }, []);
 
@@ -51,6 +55,8 @@ const Fornecedores = () => {
 
     const handleShow = (f = null) => {
         setActiveTab('dados');
+        setEnviarEmail(false);
+        setArquivo(null);
         if (f) {
             setFormData({ ...f, dataFechamento: f.dataFechamento ? f.dataFechamento.split('T')[0] : '', tipoPessoa: f.tipoPessoa || 'PJ' });
             loadPagamentosModal(f.id);
@@ -89,12 +95,45 @@ const Fornecedores = () => {
         } catch { setError("Falha ao salvar."); }
     };
 
+    const handleAddPagamento = async () => {
+        if (!novoPagamento.valor || !novoPagamento.dataVencimento) {
+            alert("Preencha valor e vencimento.");
+            return;
+        }
+
+        const data = new FormData();
+        data.append('descricao', novoPagamento.descricao);
+        data.append('valor', parseFloat(novoPagamento.valor));
+        data.append('dataVencimento', novoPagamento.dataVencimento);
+        data.append('fornecedorId', formData.id);
+        data.append('pago', false);
+        data.append('enviarEmail', enviarEmail);
+
+        if (arquivo) {
+            data.append('arquivo', arquivo);
+        }
+
+        try {
+            await api.post('/Pagamento', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            setNovoPagamento({ descricao: '', valor: '', dataVencimento: '' });
+            setEnviarEmail(false);
+            setArquivo(null);
+            loadPagamentosModal(formData.id);
+            loadData();
+        } catch (err) {
+            alert("Erro ao processar pagamento.");
+        }
+    };
+
     if (loading) return <div className="d-flex justify-content-center align-items-center vh-100"><Spinner animation="border" variant="secondary" size="sm" /></div>;
 
     return (
         <Container fluid className="px-3 px-md-5" style={{ maxWidth: "1100px", marginTop: "40px", marginBottom: "80px" }}>
-            
-            {/* HEADER RESPONSIVO */}
+
+            {/* HEADER */}
             <div className="mb-5">
                 <div className="mb-3">
                     <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "calc(1.8rem + 1vw)", color: "#1a1a1a", marginBottom: "4px" }}>
@@ -104,17 +143,17 @@ const Fornecedores = () => {
                         Contratos e Parceiros
                     </p>
                 </div>
-                
-                <Button 
-                    onClick={() => handleShow()} 
+
+                <Button
+                    onClick={() => handleShow()}
                     className="w-100 w-md-auto"
-                    style={{ 
-                        backgroundColor: "#1a1a1a", 
-                        border: "none", 
-                        borderRadius: "4px", 
-                        padding: "10px 24px", 
-                        fontSize: "11px", 
-                        fontWeight: "600", 
+                    style={{
+                        backgroundColor: "#1a1a1a",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "10px 24px",
+                        fontSize: "11px",
+                        fontWeight: "600",
                         letterSpacing: "1px",
                         display: "flex",
                         alignItems: "center",
@@ -125,7 +164,7 @@ const Fornecedores = () => {
                 </Button>
             </div>
 
-            {/* LISTA DE FORNECEDORES */}
+            {/* TABELA DE FORNECEDORES */}
             <div style={{ backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
                 <div className="table-responsive">
                     <Table borderless className="mb-0">
@@ -147,9 +186,6 @@ const Fornecedores = () => {
                                             <div style={{ fontSize: "10px", color: "#c2a36b", fontWeight: "600", textTransform: "uppercase" }}>
                                                 {f.categoria?.nome || 'Geral'}
                                             </div>
-                                            <div className="d-md-none mt-1" style={{ fontSize: "11px", color: "#666" }}>
-                                                {formatMoney(f.valorTotal)} • <span className={falta <= 0 ? "text-success" : "text-danger"}>{falta <= 0 ? "PAGO" : `FALTA ${formatMoney(falta)}`}</span>
-                                            </div>
                                         </td>
                                         <td className="d-none d-md-table-cell" style={{ padding: "16px 20px" }}>
                                             <div style={{ fontSize: "13px", color: "#444", fontWeight: "500" }}>{formatMoney(f.valorTotal)}</div>
@@ -158,7 +194,7 @@ const Fornecedores = () => {
                                             </div>
                                         </td>
                                         <td className="text-center" style={{ padding: "16px 20px" }}>
-                                            <div style={{ 
+                                            <div style={{
                                                 fontSize: "8px", fontWeight: "800", padding: "3px 8px", borderRadius: "2px",
                                                 backgroundColor: f.fechado ? "#f5f5f5" : "#fff9f0", color: f.fechado ? "#999" : "#c2a36b", border: f.fechado ? "1px solid #eee" : "1px solid #fbeed5",
                                                 display: "inline-block"
@@ -184,13 +220,13 @@ const Fornecedores = () => {
                 </div>
             </div>
 
-            {/* MODAL */}
+            {/* MODAL PRINCIPAL */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered backdrop="static" className="px-2">
                 <Modal.Body className="p-3 p-md-5">
                     <h4 style={{ fontFamily: "'Playfair Display', serif", marginBottom: "25px", fontSize: "22px" }}>
                         {formData.id === 0 ? 'Registro' : 'Editar'}
                     </h4>
-                    
+
                     <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="custom-tabs mb-4 flex-nowrap overflow-auto">
                         <Tab eventKey="dados" title="DADOS">
                             <Form className="mt-4">
@@ -242,61 +278,73 @@ const Fornecedores = () => {
                                 </div>
                             </Form>
                         </Tab>
-                        
+
                         <Tab eventKey="pagamentos" title="PAGAMENTOS" disabled={formData.id === 0}>
                             <div className="mt-4">
                                 <div className="p-3 mb-4" style={{ backgroundColor: "#fcfcfc", border: "1px solid #f0f0f0", borderRadius: "4px" }}>
                                     <Row className="g-3">
-                                        {/* xs=12 faz com que ocule 100% da tela no mobile */}
                                         <Col xs={12} md={4}>
-                                            <Form.Control 
-                                                placeholder="Descrição (Ex: Sinal)" 
-                                                className="custom-input" 
-                                                value={novoPagamento.descricao} 
-                                                onChange={e => setNovoPagamento({ ...novoPagamento, descricao: e.target.value })} 
+                                            <Form.Control
+                                                placeholder="Descrição (Ex: Sinal)"
+                                                className="custom-input"
+                                                value={novoPagamento.descricao}
+                                                onChange={e => setNovoPagamento({ ...novoPagamento, descricao: e.target.value })}
                                             />
                                         </Col>
-                                        <Col xs={12} md={3}>
-                                            <Form.Control 
-                                                type="date" 
-                                                className="custom-input text-muted" 
-                                                value={novoPagamento.dataVencimento} 
-                                                onChange={e => setNovoPagamento({ ...novoPagamento, dataVencimento: e.target.value })} 
+                                        <Col xs={6} md={3}>
+                                            <Form.Control
+                                                type="date"
+                                                className="custom-input text-muted"
+                                                value={novoPagamento.dataVencimento}
+                                                onChange={e => setNovoPagamento({ ...novoPagamento, dataVencimento: e.target.value })}
                                             />
                                         </Col>
-                                        <Col xs={12} md={3}>
-                                            <Form.Control 
-                                                type="number" 
-                                                placeholder="Valor (R$)" 
-                                                className="custom-input" 
-                                                value={novoPagamento.valor} 
-                                                onChange={e => setNovoPagamento({ ...novoPagamento, valor: e.target.value })} 
+                                        <Col xs={6} md={3}>
+                                            <Form.Control
+                                                type="number"
+                                                placeholder="Valor (R$)"
+                                                className="custom-input"
+                                                value={novoPagamento.valor}
+                                                onChange={e => setNovoPagamento({ ...novoPagamento, valor: e.target.value })}
                                             />
                                         </Col>
                                         <Col xs={12} md={2}>
-                                            <Button 
-                                                variant="dark" 
-                                                className="w-100" 
-                                                style={{ fontSize: "11px", padding: "10px", borderRadius: "4px" }} 
-                                                onClick={() => { 
-                                                    api.post('/Pagamento', { 
-                                                        ...novoPagamento, 
-                                                        fornecedorId: formData.id, 
-                                                        valor: parseFloat(novoPagamento.valor) || 0, 
-                                                        pago: false 
-                                                    }).then(() => { 
-                                                        setNovoPagamento({ descricao: '', valor: '', dataVencimento: '' }); 
-                                                        loadPagamentosModal(formData.id); 
-                                                        loadData(); 
-                                                    }) 
-                                                }}
+                                            <Button
+                                                variant="dark"
+                                                className="w-100"
+                                                style={{ fontSize: "11px", padding: "10px", borderRadius: "4px" }}
+                                                onClick={handleAddPagamento}
                                             >
                                                 ADD
                                             </Button>
                                         </Col>
+
+                                        {/* ÁREA DE ENVIO DE E-MAIL E ANEXO */}
+                                        <Col xs={12} className="mt-3">
+                                            <div className="d-flex flex-wrap align-items-center gap-3 p-2 rounded" style={{ backgroundColor: "#fff", border: "1px dashed #ddd" }}>
+                                                <Form.Check
+                                                    type="checkbox"
+                                                    label={<span style={{ fontSize: "11px", fontWeight: "700", color: "#c2a36b" }}><Send size={12} className="me-1" /> ENVIAR E-MAIL?</span>}
+                                                    checked={enviarEmail}
+                                                    onChange={e => setEnviarEmail(e.target.checked)}
+                                                />
+
+                                                {enviarEmail && (
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        <Paperclip size={12} color="#aaa" />
+                                                        <Form.Control
+                                                            type="file"
+                                                            size="sm"
+                                                            style={{ fontSize: "10px", width: "auto", border: "none", background: "transparent" }}
+                                                            onChange={e => setArquivo(e.target.files[0])}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Col>
                                     </Row>
                                 </div>
-                                
+
                                 <div className="table-responsive">
                                     <Table size="sm" borderless style={{ minWidth: "300px" }}>
                                         <thead>
@@ -318,10 +366,10 @@ const Fornecedores = () => {
                                                         <td style={{ fontSize: "11px" }}>{p.descricao}</td>
                                                         <td style={{ fontSize: "11px", fontWeight: "600", color: "#c2a36b" }}>{formatMoney(p.valor)}</td>
                                                         <td className="text-center">
-                                                            <Form.Check 
-                                                                type="checkbox" 
-                                                                checked={p.pago} 
-                                                                onChange={() => api.put(`/Pagamento/${p.id}`, { ...p, pago: !p.pago }).then(() => { loadPagamentosModal(formData.id); loadData(); })} 
+                                                            <Form.Check
+                                                                type="checkbox"
+                                                                checked={p.pago}
+                                                                onChange={() => api.put(`/Pagamento/${p.id}`, { ...p, pago: !p.pago }).then(() => { loadPagamentosModal(formData.id); loadData(); })}
                                                             />
                                                         </td>
                                                         <td className="text-end">
@@ -342,10 +390,10 @@ const Fornecedores = () => {
             </Modal>
 
             <style>{`
-                .mini-label { fontSize: 9px; fontWeight: 700; color: #aaa; letterSpacing: 1px; }
+                .mini-label { font-size: 9px; font-weight: 700; color: #aaa; letter-spacing: 1px; }
                 .custom-tabs .nav-link { color: #ccc; border: none; font-weight: 700; font-size: 0.65rem; letter-spacing: 1.2px; padding: 10px 0; margin-right: 20px; transition: 0.3s; white-space: nowrap; }
                 .custom-tabs .nav-link.active { color: #1a1a1a !important; background: transparent !important; border-bottom: 2px solid #c2a36b !important; }
-                .custom-input { border: none !important; border-bottom: 1px solid #eee !important; border-radius: 0 !important; padding: 8px 0 !important; fontSize: 13px !important; box-shadow: none !important; background: transparent !important; }
+                .custom-input { border: none !important; border-bottom: 1px solid #eee !important; border-radius: 0 !important; padding: 8px 0 !important; font-size: 13px !important; box-shadow: none !important; background: transparent !important; }
                 .custom-input:focus { border-bottom: 1px solid #c2a36b !important; }
                 @media (max-width: 576px) {
                     .px-3 { padding-left: 15px !important; padding-right: 15px !important; }

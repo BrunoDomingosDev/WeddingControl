@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WeddingControl.Api.Data;
-using WeddingControl.Api.Models;
+using WeddingControl.Api.Models; // <-- AQUI ESTAVA FALTANDO O PONTO E VÍRGULA
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeddingControl.Api.Controllers;
 
+[Authorize] // <--- Protegendo o CategoriaController também!
 [ApiController]
 [Route("api/[controller]")]
 public class CategoriaController : ControllerBase

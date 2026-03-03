@@ -3,84 +3,104 @@ using Microsoft.EntityFrameworkCore;
 using WeddingControl.Api.Data;
 using WeddingControl.Api.Models;
 
-namespace WeddingControl.Api.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class FornecedorController : ControllerBase
+namespace WeddingControl.Api.Controllers
 {
-    private readonly AppDbContext _context;
-
-    public FornecedorController(AppDbContext context)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class FornecedorController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly AppDbContext _context;
 
-    // GET: api/fornecedor
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Fornecedor>>> Get()
-    {
-        return await _context.Fornecedores
-            .Include(f => f.Categoria)
-            .ToListAsync();
-    }
+        public FornecedorController(AppDbContext context)
+        {
+            _context = context;
+        }
 
-    // GET: api/fornecedor/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Fornecedor>> GetById(int id)
-    {
-        var fornecedor = await _context.Fornecedores
-            .Include(f => f.Categoria)
-            .FirstOrDefaultAsync(f => f.Id == id);
+        // GET: api/Fornecedor
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Fornecedor>>> GetFornecedores()
+        {
+            return await _context.Fornecedores
+                .Include(f => f.Categoria) // Traz o nome da categoria junto
+                .ToListAsync();
+        }
 
-        if (fornecedor == null)
-            return NotFound();
+        // GET: api/Fornecedor/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Fornecedor>> GetFornecedor(int id)
+        {
+            var fornecedor = await _context.Fornecedores.FindAsync(id);
 
-        return fornecedor;
-    }
+            if (fornecedor == null)
+            {
+                return NotFound();
+            }
 
-    // POST: api/fornecedor
-    [HttpPost]
-    public async Task<ActionResult<Fornecedor>> Post(Fornecedor fornecedor)
-    {
-        // valida se categoria existe
-        var categoriaExiste = await _context.Categorias
-            .AnyAsync(c => c.Id == fornecedor.CategoriaId);
+            return fornecedor;
+        }
 
-        if (!categoriaExiste)
-            return BadRequest("Categoria inválida");
+        // POST: api/Fornecedor
+        [HttpPost]
+        public async Task<ActionResult<Fornecedor>> PostFornecedor(Fornecedor fornecedor)
+        {
+            // Opcional: Se quiser garantir maiúsculo, descomente a linha abaixo
+            // fornecedor.TipoPessoa = fornecedor.TipoPessoa?.ToUpper(); 
 
-        _context.Fornecedores.Add(fornecedor);
-        await _context.SaveChangesAsync();
+            _context.Fornecedores.Add(fornecedor);
+            await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = fornecedor.Id }, fornecedor);
-    }
+            return CreatedAtAction("GetFornecedor", new { id = fornecedor.Id }, fornecedor);
+        }
 
-    // PUT: api/fornecedor/5
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Put(int id, Fornecedor fornecedor)
-    {
-        if (id != fornecedor.Id)
-            return BadRequest();
+        // PUT: api/Fornecedor/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutFornecedor(int id, Fornecedor fornecedor)
+        {
+            if (id != fornecedor.Id)
+            {
+                return BadRequest();
+            }
 
-        _context.Entry(fornecedor).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+            _context.Entry(fornecedor).State = EntityState.Modified;
 
-        return NoContent();
-    }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!FornecedorExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
-    // DELETE: api/fornecedor/5
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var fornecedor = await _context.Fornecedores.FindAsync(id);
+            return NoContent();
+        }
 
-        if (fornecedor == null)
-            return NotFound();
+        // DELETE: api/Fornecedor/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteFornecedor(int id)
+        {
+            var fornecedor = await _context.Fornecedores.FindAsync(id);
+            if (fornecedor == null)
+            {
+                return NotFound();
+            }
 
-        _context.Fornecedores.Remove(fornecedor);
-        await _context.SaveChangesAsync();
+            _context.Fornecedores.Remove(fornecedor);
+            await _context.SaveChangesAsync();
 
-        return NoContent();
+            return NoContent();
+        }
+
+        private bool FornecedorExists(int id)
+        {
+            return _context.Fornecedores.Any(e => e.Id == id);
+        }
     }
 }

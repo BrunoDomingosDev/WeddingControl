@@ -1,0 +1,10 @@
+﻿version: "2"
+tunnels:
+  minha-api:
+    addr: 5000
+    proto: http
+    hostname: eartha-ureido-renetta.ngrok-free.dev
+
+  meu-site:
+    addr: 5173
+    proto: http

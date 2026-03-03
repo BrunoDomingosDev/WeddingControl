@@ -1,0 +1,65 @@
+﻿/* ===== FONTES ===== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+
+/* ===== VARIÁVEIS ===== */
+:root {
+    --bg-main: rgb(242, 239, 234);
+    --text-primary: #3f3f3f;
+    --text-muted: #6c6c6c;
+    --accent-gold: #c2a36b;
+}
+
+/* ===== BASE ===== */
+body {
+    font-family: 'Open Sans', sans-serif;
+    color: var(--text-primary);
+    background-color: #ffffff;
+}
+
+/* ===== TÍTULOS ===== */
+h1, h2, h3, h4, h5 {
+    .tangerine-regular {
+        font-family: "Tangerine", cursive;
+        font-weight: 400;
+        font-style: normal;
+    }
+
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 0.5px;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    background-color: var(--bg-main) !important;
+}
+
+.navbar-brand span {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ===== LINKS ===== */
+.nav-link {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+    .nav-link:hover {
+        color: var(--accent-gold) !important;
+    }
+
+/* ===== CARDS DO CONTADOR ===== */
+.card {
+    border-radius: 12px;
+}
+
+.card-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--text-primary);
+}
+
+.card-text {
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}

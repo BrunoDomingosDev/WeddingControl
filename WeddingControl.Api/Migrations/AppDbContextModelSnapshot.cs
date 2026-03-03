@@ -42,6 +42,26 @@ namespace WeddingControl.Api.Migrations
                     b.ToTable("Categorias");
                 });
 
+            modelBuilder.Entity("WeddingControl.Api.Models.Convidados", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("QuantidadePessoas")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Convidados");
+                });
+
             modelBuilder.Entity("WeddingControl.Api.Models.Fornecedor", b =>
                 {
                     b.Property<int>("Id")
@@ -53,8 +73,14 @@ namespace WeddingControl.Api.Migrations
                     b.Property<int>("CategoriaId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CnpjCpf")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("DataFechamento")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
 
                     b.Property<bool>("Fechado")
                         .HasColumnType("boolean");
@@ -66,7 +92,13 @@ namespace WeddingControl.Api.Migrations
                     b.Property<string>("Observacao")
                         .HasColumnType("text");
 
-                    b.Property<decimal>("ValorEntrada")
+                    b.Property<string>("Telefone")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TipoPessoa")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ValorEntrada")
                         .HasColumnType("numeric");
 
                     b.Property<decimal>("ValorTotal")
@@ -79,6 +111,40 @@ namespace WeddingControl.Api.Migrations
                     b.ToTable("Fornecedores");
                 });
 
+            modelBuilder.Entity("WeddingControl.Api.Models.Pagamento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DataPagamento")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataVencimento")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FornecedorId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Pago")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("Valor")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FornecedorId");
+
+                    b.ToTable("Pagamentos");
+                });
+
             modelBuilder.Entity("WeddingControl.Api.Models.Fornecedor", b =>
                 {
                     b.HasOne("WeddingControl.Api.Models.Categoria", "Categoria")
@@ -88,6 +154,17 @@ namespace WeddingControl.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Categoria");
+                });
+
+            modelBuilder.Entity("WeddingControl.Api.Models.Pagamento", b =>
+                {
+                    b.HasOne("WeddingControl.Api.Models.Fornecedor", "Fornecedor")
+                        .WithMany()
+                        .HasForeignKey("FornecedorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fornecedor");
                 });
 #pragma warning restore 612, 618
         }
